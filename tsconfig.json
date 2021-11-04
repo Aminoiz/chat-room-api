@@ -21,11 +21,8 @@
       "@modules/*": [
         "./src/modules/*"
       ],
-      "@exceptions/*": [
-        "./src/exceptions/*"
-      ],
-      "@consumers": [
-        "./src/consumers/*"
+      "@middlewares/*": [
+        "./src/middlewares/*"
       ],
     }
   },
