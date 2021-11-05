@@ -1,4 +1,8 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { ConnectedUserEntity } from '@modules/chat/models/connected-user.entity';
+import { JoinedRoomEntity } from '@modules/chat/models/joined-room.entity';
+import { MessageEntity } from '@modules/chat/models/message.entity';
+import { RoomEntity } from '@modules/chat/models/room.entity';
+import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class UserEntity {
@@ -15,7 +19,17 @@ export class UserEntity {
   @Column({select: false})
   password: string;
 
-  // TODO Add message and room related data
+  @ManyToMany(() => RoomEntity, room => room.users)
+  rooms: RoomEntity[]
+
+  @OneToMany(() => ConnectedUserEntity, connection => connection.user)
+  connections: ConnectedUserEntity[];
+
+  @OneToMany(() => JoinedRoomEntity, joinedRoom => joinedRoom.room)
+  joinedRooms: JoinedRoomEntity[];
+
+  @OneToMany(() => MessageEntity, message => message.user)
+  messages: MessageEntity[];
 
   @BeforeInsert()
   @BeforeUpdate()
