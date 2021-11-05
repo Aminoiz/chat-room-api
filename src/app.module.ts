@@ -4,18 +4,20 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/c
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthenticationMiddleware } from '@middlewares/authentication.middleware';
+import { ChatModule } from '@modules/chat/chat.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
       synchronize: true
     }),
+    ConfigModule.forRoot({ isGlobal: true }),
     UserModule,
     AuthenticationModule,
+    ChatModule,
   ],
 })
 export class AppModule implements NestModule {
