@@ -14,6 +14,8 @@ import { RoomI } from '@modules/chat/models/room.interface';
 import { MessageI } from '@modules/chat/models/message.interface';
 import { JoinedRoomI } from '@modules/chat/models/joined-room.interface';
 import { ConfigService } from '@nestjs/config';
+import { userJoinedMessage, userLeftMessage } from '@common/system-messages.object';
+import { systemUser } from '@common/defaults';
 
 @WebSocketGateway({ cors: { origin: ['http://localhost:3000', 'http://localhost:4200'] } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
@@ -91,9 +93,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     const roomLimit: number = this.configService.get('ROOM_LIMIT', 100);
 
     const dbRoom = await this.roomService.getRoom(room.id);
-    if (room.users.length >= roomLimit) {
+    if (dbRoom.users.length >= roomLimit) {
       await this.server.to(socket.id).emit('Error', new BadRequestException());
       return;
+    }
+
+    const message: MessageI = await this.messageService.create(userJoinedMessage(room, systemUser));
+    const joinedUsers: JoinedRoomI[] = await this.joinedRoomService.findByRoom(room);
+    for (const user of joinedUsers) {
+      await this.server.to(user.socketId).emit('messageAdded', message);
     }
 
     const messages = await this.messageService.findMessagesForRoom(room, { limit: 10, page: 1 });
@@ -104,9 +112,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   }
 
   @SubscribeMessage('leaveRoom')
-  async onLeaveRoom(socket: Socket) {
+  async onLeaveRoom(socket: Socket, room: RoomI) {
     // remove connection from JoinedRooms
     await this.joinedRoomService.deleteBySocketId(socket.id);
+
+    const message: MessageI = await this.messageService.create(userLeftMessage(room, systemUser));
+    const joinedUsers: JoinedRoomI[] = await this.joinedRoomService.findByRoom(room);
+    for (const user of joinedUsers) {
+      await this.server.to(user.socketId).emit('messageAdded', message);
+    }
   }
 
   @SubscribeMessage('addMessage')
